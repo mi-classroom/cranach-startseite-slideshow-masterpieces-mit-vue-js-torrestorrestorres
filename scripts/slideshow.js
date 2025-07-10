@@ -14,6 +14,18 @@ const slideShow = defineComponent({
           Implement slide show items
         -->
 
+        <div class="slideshow-item" v-for="(slide, index) in slideDataItems" :key="index">
+            <figure>
+    
+              <img
+                :src='slide.img_src'
+                :alt='slide.title' 
+                :width='slide.width' 
+                :height='slide.height' 
+                loading="lazy">
+              <figcaption>{{ slide.title }}</figcaption>
+            </figure>
+          </div>
       </div>
       <nav>
       <!-- 
@@ -22,7 +34,12 @@ const slideShow = defineComponent({
         connect the buttons to the nextSlide and previousSlide methods
         hint: 'v-for="(thumb, index) in slideDataItems' can be used to iterate over the slides
       -->
-        
+        <button class="round-button slideshow-button-previous" aria-label="Vorheriges Element" :disabled="isFirstSlide" @click="previousSlide">
+          <span class="icon">chevron_left</span>
+        </button>
+        <button class="round-button slideshow-button-next" aria-label="Nächstes Element" :disabled="isLastSlide" @click="nextSlide">
+          <span class="icon">chevron_right</span>
+        </button>
         
       </nav>
       <div class="slideshow-thumbnails">
@@ -37,6 +54,13 @@ const slideShow = defineComponent({
             connect the thumbnails to the goToSlide method
             hint: 'v-for="(thumb, index) in slideDataItems' can be used to iterate over the slides          
            -->
+           <li class="slideshow-thumbnails-item active" v-for="(slide, index) in slideDataItems">
+              <img
+                :src='slide.img_src'
+                :alt='getThumbnailOffset(index)' 
+                loading="lazy"
+                @click="goToSlide(index)">
+            </li>
         </ul>
       </div> 
     </div>
@@ -52,6 +76,17 @@ const slideShow = defineComponent({
     // Use props.sourceURL as parameter for the fetch request
     // pass the fetched data to slideDataItems.value
     const loadSlidesData = async () => {
+      try {
+        const response = await fetch(props.sourceUrl);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        slideDataItems.value = data.results;
+        console.log('Slide data loaded:', slideDataItems.value);
+      } catch (error) {
+        console.error('Error fetching slide data:', error);
+      }
     }
 
 
@@ -59,7 +94,7 @@ const slideShow = defineComponent({
     // Add a computed property with the name isFirstSlide
     // Check if the current slide is the first one
     const isFirstSlide = computed(() => {
-      return 0;
+      return currentIndex.value === 0;
     }
     );
 
@@ -74,10 +109,15 @@ const slideShow = defineComponent({
       }
     };
 
+    const getThumbnailOffset = (index) => "Thumbnail "+ index
+
     // TODO [4]: 
     // Implement the previousSlide function
     // This function should decrement currentIndex.value if it is not the first slide
     const previousSlide = () => {
+      if (!isFirstSlide.value) {
+        currentIndex.value--;
+      }
     };
 
     // TODO [6]: 
@@ -85,6 +125,9 @@ const slideShow = defineComponent({
     // This function should take an index as a parameter and set currentIndex.value to that index
     // Ensure the index is within bounds of slideDataItems
     const goToSlide = (index) => {
+      if (index >= 0 && index < slideDataItems.value.length) {
+        currentIndex.value = index;
+      }
     };
 
     // Computed propertie to handle the translation of the slides
@@ -123,7 +166,8 @@ const slideShow = defineComponent({
       thumbnailsContainer,
       slideContainerTransform,
       thumbnailsContainerTransform,
-      currentIndex
+      currentIndex,
+      getThumbnailOffset
 
     };
   },
